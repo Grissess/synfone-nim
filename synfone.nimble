@@ -14,3 +14,4 @@ bin           = @["synfone"]
 requires "nim >= 2.2.8"
 requires "nim_midi"
 requires "nordaudio"
+requires "cborious"

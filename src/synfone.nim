@@ -1,18 +1,20 @@
 import synfone/interval
 import synfone/packet
-import synfone/receiver
 import synfone/transmitter
+import synfone/sampler
+import synfone/receiver/tone
+import synfone/receiver/sample
 
 export interval
 export packet
-export receiver
+export tone
 export transmitter
 
 when isMainModule:
   import std/cmdline
   proc usage() =
     echo """
-synfone { interval | transmitter | receiver } ...
+synfone { interval | transmitter | sampler | tone | sample } ...
 """
 
   proc main() =
@@ -29,8 +31,12 @@ synfone { interval | transmitter | receiver } ...
       interval.main(cmds)
     of "transmitter":
       transmitter.main(cmds)
-    of "receiver":
-      receiver.main(cmds)
+    of "sampler":
+      sampler.main(cmds)
+    of "tone":
+      tone.main(cmds)
+    of "sample":
+      sample.main(cmds)
     else:
       usage()
 

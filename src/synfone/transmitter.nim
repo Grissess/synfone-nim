@@ -57,6 +57,8 @@ type
 func pitchToFrequency(pitch: float): float =
   440.0 * 2.0 ^ ((pitch - 69.0) / 12.0)
 
+proc `+`*(left, right: Port): Port {. borrow .}
+
 # XXX the stdlib only supports data pointers (not strings) in an overload that
 # requires address be specified as a string (and uses gAI); for the overload
 # using IpAddress, data must be a string, which we can't safely guarantee
@@ -155,9 +157,9 @@ proc defaultRoute*(targets: var seq[Target], binding: var StreamBinding) =
   # this extensible without code some day
   var selidx = -1
   if binding.stream.group == "perc":
-    selidx = targets.findIt(it.kind == "DRUM")
+    selidx = targets.findIt(it.kind in ["DRUM", "SAMP"])
   else:
-    selidx = targets.findIt(it.kind != "DRUM")
+    selidx = targets.findIt(it.kind notin ["DRUM", "SAMP"])
   if selidx != -1:
     binding.targets.add targets[selidx]
     if not targets[selidx].polyphone:
@@ -266,11 +268,13 @@ proc main*(args: seq[string]) =
     intervals.add intervalFromXml(loadXml(file))
 
   var tx = newTransmitter()
-  var hosts = tx.findHosts()
+  var hosts = tx.findHosts() & tx.findHosts(port = default_port + 1.Port)
   if hosts.len == 0:
     stderr.writeLine "No hosts; stop."
     return
   stderr.writeLine $hosts.len, " hosts"
+  for host in hosts:
+    stderr.writeLine "- ", $host.address, ":", $host.port, " ", host.kind, " ", host.uid
   var targets = hosts.toTargets
   stderr.writeLine $targets.len, " targets"
 

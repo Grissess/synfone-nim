@@ -10,8 +10,8 @@ import std/parseutils
 import std/memfiles
 import std/files
 
-import packet
-from transmitter import default_port, recvBufferFrom, sendTo
+import ../packet
+from ../transmitter import default_port, recvBufferFrom, sendTo
 
 # There are some const-cast issues with this binding, at least on my system
 {. localPassC: "-Wno-error=incompatible-pointer-types" .}
@@ -74,8 +74,8 @@ proc samples*(voice: var Voice, samples: var openArray[Sample]) =
   voice.voice_data[].phase = vd.phase  # update the one field we need to write
 
 proc samples*(chorus: var Chorus, samples: var openArray[Sample]) =
+  samples.fill 0.0
   var mix_buffer = newSeq[Sample] samples.len
-  fill(samples, 0.0)
   for voice in chorus.voices.mitems:
     voice.samples mix_buffer
     for idx, sample in mix_buffer:

@@ -160,12 +160,15 @@ func accept(nsb: var NoteStreamBuilder, rte: RealTimeEvent) =
     of NoteOn:
       nsb.tip = some((rte.real_time, rte.event.mi_channel, rte.event.mi_par1.float, rte.event.mi_par2.float / 127.0))
     of NoteOff:
-      var (time, _, pitch, amplitude) = nsb.tip.get
+      let (time, _, pitch, amplitude) = nsb.tip.get
       nsb.stream.notes.add Note(time: time, duration: rte.real_time - time, pitch: pitch, amplitude: amplitude)
       nsb.tip = none(NoteTip)
     else: discard
 
 proc build*(nsb: NoteStreamBuilder): NoteStream =
+  if nsb.tip.isSome:
+    let (time, channel, pitch, amplitude) = nsb.tip.get
+    stderr.writeLine "WARN: unfinished note starting at ", $time, " channel ", $channel, " pitch ", $pitch, " amplitude ", $amplitude, " dropped"
   nsb.stream
 
 proc addEvent*(ivb: var IntervalBuilder, rte: RealTimeEvent) =
@@ -246,7 +249,7 @@ proc noteStreamFromXml*(node: XmlNode): NoteStream =
     var attrs = child.attrs
     var note = Note()
     discard parseFloat(attrs["pitch"], note.pitch)
-    if attrs.hasKey("ampl"):
+    if "ampl" in attrs:
       discard parseFloat(attrs["ampl"], note.amplitude)
     else:
       discard parseFloat(attrs["vel"], note.amplitude)
