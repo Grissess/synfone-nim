@@ -25,7 +25,7 @@ type
 
   Sample* = float32
 
-  Generator* = proc(phase: float): Sample {. closure .}
+  Generator* = proc(phase: float): Sample {. closure, noSideEffect .}
 
   Voice* = ref object
     voice_data*: ptr VoiceData  # We can stash this in a mmap, for example
@@ -43,14 +43,14 @@ type
     chorus*: Chorus
     is_quit: bool
 
-proc genSaw*(phase: float): Sample =
+func genSaw*(phase: float): Sample =
   2.0 * phase / TAU - 1.0
 
-proc genSquare*(phase: float): Sample =
+func genSquare*(phase: float): Sample =
   if phase < (TAU / 2.0): 1.0 else: -1.0
 
 proc newGenLut*(lut: seq[Sample]): Generator =
-  proc(phase: float): Sample =
+  func(phase: float): Sample =
     lut[(phase / TAU).int]
 
 proc samples*(voice: var Voice, samples: var openArray[Sample]) =
@@ -93,7 +93,7 @@ proc streamCallback*(chorus: var Chorus): (StreamCallback, pointer) =
       frameCount: culong,
       timeInfo: ptr StreamCallbackTimeInfo,
       statusFlags: StreamCallbackFlags,
-      data: pointer): cint {. cdecl .} =
+      data: pointer): cint {. cdecl, thread .} =
     var ch = cast[ptr Chorus](data)
     var sample_ptr = cast[ptr UncheckedArray[Sample]](output)
     # NB: we'd have to multiply channels in here if we knew it was not 1

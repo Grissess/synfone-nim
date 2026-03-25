@@ -68,7 +68,7 @@ proc streamCallback*(chorus: var Chorus): (StreamCallback, pointer) =
       frameCount: culong,
       timeInfo: ptr StreamCallbackTimeInfo,
       statusFlags: StreamCallbackFlags,
-      data: pointer): cint {. cdecl .} =
+      data: pointer): cint {. cdecl, thread .} =
     var ch = cast[ptr Chorus](data)
     var sample_ptr = cast[ptr UncheckedArray[Sample]](output)
     # NB: we'd have to multiply channels in here if we knew it was not 1
