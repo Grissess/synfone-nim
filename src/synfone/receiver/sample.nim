@@ -23,7 +23,7 @@ type
 
   Chorus* = ref object
     sample_rate: float
-    voices*: seq[Voice]
+    voices* {. guard: lock .}: seq[Voice]
     amplitude*: float
     lock: Lock
 
@@ -46,14 +46,15 @@ proc samples*(chorus: var Chorus, samples: var openArray[Sample]) =
   samples.fill 0.0
   var mix_buffer = newSeq[Sample] samples.len
   var index = 0
-  while index < chorus.voices.len:
-    mix_buffer.fill 0.0
-    if chorus.voices[index].samples mix_buffer:
-      chorus.voices.del index
-    else:
-      index += 1
-    for idx, sample in mix_buffer:
-      samples[idx] += sample * chorus.amplitude
+  withLock chorus.lock:
+    while index < chorus.voices.len:
+      mix_buffer.fill 0.0
+      if chorus.voices[index].samples mix_buffer:
+        chorus.voices.del index
+      else:
+        index += 1
+      for idx, sample in mix_buffer:
+        samples[idx] += sample * chorus.amplitude
 
 proc streamParameters*(chorus: Chorus): StreamParameters =
   result.device = getDefaultOutputDevice()
@@ -71,8 +72,7 @@ proc streamCallback*(chorus: var Chorus): (StreamCallback, pointer) =
     var ch = cast[ptr Chorus](data)
     var sample_ptr = cast[ptr UncheckedArray[Sample]](output)
     # NB: we'd have to multiply channels in here if we knew it was not 1
-    withLock ch[].lock:
-      ch[].samples sample_ptr.toOpenArray(0, (frameCount - 1).int)
+    ch[].samples sample_ptr.toOpenArray(0, (frameCount - 1).int)
     return paContinue.cint
   (callback, chorus.addr)
 
