@@ -163,7 +163,7 @@ proc defaultRoute*(targets: var seq[Target], binding: var StreamBinding) =
   if selidx != -1:
     binding.targets.add targets[selidx]
     if not targets[selidx].polyphone:
-      targets.del selidx
+      targets.delete selidx
 
 proc newPlayback*(streams: seq[NoteStream]): Playback =
   Playback(
