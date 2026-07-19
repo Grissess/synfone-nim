@@ -226,13 +226,16 @@ proc play*(tx: Transmitter, pb: var Playback, seek: Duration = initDuration(), c
     pb.advanceTo(playtime) do (b: StreamBinding, n: Note):
       var real_play_time = factor * n.duration
       var rpt_secs = real_play_time.uint32
+      var flags: PlayFlags
+      if n.keep_phase:
+        flags.incl PlayOption.SamePhase
       var packet = Packet(command: Command.Play, data: [
         rpt_secs,
         ((real_play_time - rpt_secs.float) * 1000000.0).uint32,
         n.pitch.pitchToFrequency.uint32,
         cast[uint32](n.amplitude.float32),
         0'u32,  # to be set
-        0'u32,
+        cast[uint32](flags),
         0'u32, 0'u32  # reserved
       ])
       for target in b.targets:

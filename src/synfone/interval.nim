@@ -125,6 +125,7 @@ type
     duration*: float
     pitch*: float
     amplitude*: float
+    keep_phase*: bool
 
   NoteStream* = object
     group*: string
@@ -256,12 +257,15 @@ proc noteStreamFromXml*(node: XmlNode): NoteStream =
       note.amplitude /= 127.0
     discard parseFloat(attrs["time"], note.time)
     discard parseFloat(attrs["dur"], note.duration)
+    if "par" in attrs and attrs["par"].len > 0:
+      note.keep_phase = true
     result.notes.add note
 
 proc bpmMapFromXml*(node: XmlNode): BPMMap =
   var builder = BPMMapBuilder()
-  var ppqn: uint
-  discard parseUInt(node.attrs["ppqn"], ppqn)
+  var ppqn: uint = 96
+  if "ppqn" in node.attrs:
+    discard parseUInt(node.attrs["ppqn"], ppqn)
   builder.ppqn = ppqn.Ticks
   for child in node:
     var tick: uint
@@ -273,7 +277,11 @@ proc bpmMapFromXml*(node: XmlNode): BPMMap =
   builder.build
 
 proc intervalFromXml*(node: XmlNode): Interval =
-  result.bpm_map = bpmMapFromXml node.child("meta").child("bpms")
+  var meta = node.child("meta")
+  if not meta.isNil:
+    var bpms = meta.child("bpms")
+    if not bpms.isNil:
+      result.bpm_map = bpmMapFromXml bpms
   var streams = node.child("streams")
   for stream in streams:
     result.streams.add noteStreamFromXml(stream)
